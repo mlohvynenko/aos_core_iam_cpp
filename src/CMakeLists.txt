@@ -23,6 +23,8 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 add_subdirectory(app)
 add_subdirectory(logger)
+add_subdirectory(visidentifier)
+add_subdirectory(utils)
 
 # ######################################################################################################################
 # Sources
@@ -40,7 +42,7 @@ add_executable(${TARGET} ${SOURCES})
 # Libraries
 # ######################################################################################################################
 
-target_link_libraries(${TARGET} PUBLIC app logger)
+target_link_libraries(${TARGET} PUBLIC app logger visidentifier utils)
 
 # ######################################################################################################################
 # Install

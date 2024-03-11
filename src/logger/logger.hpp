@@ -19,14 +19,13 @@ class LogModuleType {
 public:
     enum class Enum {
         eApp,
+        eVisidentifier,
         eNumModules,
     };
 
     static const aos::Array<const char* const> GetStrings()
     {
-        static const char* const sLogModuleTypeStrings[] = {
-            "app",
-        };
+        static const char* const sLogModuleTypeStrings[] = {"app", "visidentifier"};
 
         return aos::Array<const char* const>(sLogModuleTypeStrings, aos::ArraySize(sLogModuleTypeStrings));
     };

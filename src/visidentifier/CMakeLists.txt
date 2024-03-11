@@ -5,33 +5,23 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-set(TARGET aos_iamanager_test)
-
-# ######################################################################################################################
-# Defines
-# ######################################################################################################################
-
-# ######################################################################################################################
-# Includes
-# ######################################################################################################################
-
-include_directories(${CMAKE_SOURCE_DIR}/src)
+set(TARGET visidentifier)
 
 # ######################################################################################################################
 # Sources
 # ######################################################################################################################
 
-set(SOURCES utils/exception_test.cpp utils/json_test.cpp utils/scopeexit_test.cpp visidentifier/pocowsclient_tests.cpp
-            visidentifier/testvisserver.cpp visidentifier/visidentifier_tests.cpp
-)
+set(SOURCES pocowsclient.cpp visidentifier.cpp visprotocol.cpp wsclientevent.cpp wspendingrequests.cpp)
+
+# ######################################################################################################################
+# Includes
+# ######################################################################################################################
 
 # ######################################################################################################################
 # Target
 # ######################################################################################################################
 
-add_executable(${TARGET} ${SOURCES})
-
-gtest_discover_tests(${TARGET})
+add_library(${TARGET} STATIC ${SOURCES})
 
 # ######################################################################################################################
 # Labraries
@@ -39,10 +29,14 @@ gtest_discover_tests(${TARGET})
 
 target_link_libraries(
     ${TARGET}
-    logger
-    utils
-    visidentifier
-    aoscommon
-    Poco::Util
-    GTest::gmock_main
+    PUBLIC aoscommon
+           aosiam
+           Poco::Foundation
+           Poco::Net
+           Poco::Util
+           Poco::JSON
+           Poco::Crypto
+           logger
+           utils
+           Poco::NetSSL
 )
