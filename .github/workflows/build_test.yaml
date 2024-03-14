@@ -24,7 +24,7 @@ jobs:
 
       - name: Prepare
         run: |
-          sudo apt install lcov libpoco-dev libsystemd-dev -y
+          sudo apt install lcov libsystemd-dev -y
 
       - name: Build and test
         run: |
