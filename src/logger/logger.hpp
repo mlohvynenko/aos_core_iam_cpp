@@ -8,9 +8,8 @@
 #ifndef LOGGER_HPP_
 #define LOGGER_HPP_
 
-#include <mutex>
-
 #include <aos/common/tools/log.hpp>
+#include <mutex>
 
 /**
  * Log module type.
@@ -21,6 +20,7 @@ public:
         eApp,
         eConfig,
         eDatabase,
+        eIAM,
         eVISIdentifier,
         eNumModules,
     };
@@ -31,6 +31,7 @@ public:
             "app",
             "config",
             "database",
+            "eIAM",
             "visidentifier",
         };
 
