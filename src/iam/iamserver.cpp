@@ -237,7 +237,7 @@ void ConvertToProto(const Array<StaticString<cSubjectIDLen>>& src, iamanager::v4
  **********************************************************************************************************************/
 
 void IAMServer::Init(const Config& config, certhandler::CertHandlerItf* certHandler,
-    identhandler::IdentHandlerItf* identHandler, permhandler::PermissionHandlerItf* permHandler,
+    identhandler::IdentHandlerItf* identHandler, permhandler::PermHandlerItf* permHandler,
     RemoteIAMHandlerItf* remoteHandler, cryptoutils::CertLoader& certLoader, crypto::x509::ProviderItf& cryptoProvider,
     bool provisioningMode)
 {

@@ -8,7 +8,8 @@
 #ifndef IAMSERVER_HPP_
 #define IAMSERVER_HPP_
 
-#include "permissionhandler.hpp"
+#include <aos/iam/permhandler.hpp>
+
 #include "remoteiamhandler.hpp"
 #include <aos/common/cryptoutils.hpp>
 #include <aos/iam/certhandler.hpp>
@@ -65,7 +66,7 @@ public:
      * @param provisioningMode flag indicating whether provisioning mode is active.
      */
     void Init(const Config& config, certhandler::CertHandlerItf* certHandler,
-        identhandler::IdentHandlerItf* identHandler, permhandler::PermissionHandlerItf* permHandler,
+        identhandler::IdentHandlerItf* identHandler, permhandler::PermHandlerItf* permHandler,
         RemoteIAMHandlerItf* remoteHandler, cryptoutils::CertLoader& certLoader,
         crypto::x509::ProviderItf& cryptoProvider, bool provisioningMode);
 
@@ -135,10 +136,10 @@ private:
         const std::string& addr, const std::shared_ptr<grpc::ServerCredentials>& credentials, bool provisionMode);
     void RegisterProtectedServices(grpc::ServerBuilder& builder, bool provisionMode);
 
-    certhandler::CertHandlerItf*       mCertHandler;
-    identhandler::IdentHandlerItf*     mIdentHandler;
-    permhandler::PermissionHandlerItf* mPermHandler;
-    RemoteIAMHandlerItf*               mRemoteHandler;
+    certhandler::CertHandlerItf*   mCertHandler;
+    identhandler::IdentHandlerItf* mIdentHandler;
+    permhandler::PermHandlerItf*   mPermHandler;
+    RemoteIAMHandlerItf*           mRemoteHandler;
 
     std::string              mNodeID;
     std::string              mNodeType;

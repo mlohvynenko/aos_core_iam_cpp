@@ -12,8 +12,8 @@ set(aoscore_build_dir ${CMAKE_CURRENT_BINARY_DIR}/aoscore)
 ExternalProject_Add(
     aoscore
     PREFIX ${aoscore_build_dir}
-    GIT_REPOSITORY https://github.com/mykola-kobets-epam/aos_core_lib_cpp.git
-    GIT_TAG aos-core-iam-cpp-adaptation
+    GIT_REPOSITORY https://github.com/mlohvynenko/aos_core_lib_cpp.git
+    GIT_TAG rebased-aos-core-iam-cpp-adaptation
     GIT_PROGRESS TRUE
     GIT_SHALLOW TRUE
     CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${aoscore_build_dir}
