@@ -21,7 +21,7 @@
 #include <aos/iam/permhandler.hpp>
 #include <config/config.hpp>
 
-#include <iamanager.grpc.pb.h>
+#include <iamanager/v5/iamanager.grpc.pb.h>
 
 #include "iamclient/remoteiamhandler.hpp"
 
