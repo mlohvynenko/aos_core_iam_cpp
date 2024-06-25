@@ -9,108 +9,7 @@
 
 #include "log.hpp"
 #include "nodecontroller.hpp"
-
-/***********************************************************************************************************************
- * Static
- **********************************************************************************************************************/
-
-static aos::Error ConvertToAos(
-    const google::protobuf::RepeatedPtrField<iamanager::v5::CPUInfo>& src, aos::CPUInfoStaticArray& dst)
-{
-    size_t id = 0;
-
-    for (const auto& srcCPU : src) {
-        aos::CPUInfo dstCPU;
-
-        dstCPU.mID         = id++;
-        dstCPU.mModelName  = srcCPU.model_name().c_str();
-        dstCPU.mNumCores   = srcCPU.num_cores();
-        dstCPU.mNumThreads = srcCPU.num_threads();
-        dstCPU.mArch       = srcCPU.arch().c_str();
-        dstCPU.mArchFamily = srcCPU.arch_family().c_str();
-
-        if (auto err = dst.PushBack(dstCPU); !err.IsNone()) {
-            return err;
-        }
-    }
-
-    return aos::ErrorEnum::eNone;
-}
-
-static aos::Error ConvertToAos(
-    const google::protobuf::RepeatedPtrField<iamanager::v5::PartitionInfo>& src, aos::PartitionInfoStaticArray& dst)
-{
-    for (const auto& srcPartition : src) {
-        aos::PartitionInfo dstPartition;
-
-        dstPartition.mName      = srcPartition.name().c_str();
-        dstPartition.mTotalSize = srcPartition.total_size();
-
-        for (const auto& srcType : srcPartition.types()) {
-            if (auto err = dstPartition.mTypes.PushBack(srcType.c_str()); !err.IsNone()) {
-                return err;
-            }
-        }
-
-        if (auto err = dst.PushBack(dstPartition); !err.IsNone()) {
-            return err;
-        }
-    }
-
-    return aos::ErrorEnum::eNone;
-}
-
-static aos::Error ConvertToAos(
-    const google::protobuf::RepeatedPtrField<iamanager::v5::NodeAttribute>& src, aos::NodeAttributeStaticArray& dst)
-{
-    for (const auto& srcAttribute : src) {
-        aos::NodeAttribute dstAttribute;
-
-        dstAttribute.mName  = srcAttribute.name().c_str();
-        dstAttribute.mValue = srcAttribute.value().c_str();
-
-        if (auto err = dst.PushBack(dstAttribute); !err.IsNone()) {
-            return err;
-        }
-    }
-
-    return aos::ErrorEnum::eNone;
-}
-
-static aos::Error ConvertToAos(const iamproto::NodeInfo& src, aos::NodeInfo& dst)
-{
-    dst.mID   = src.id().c_str();
-    dst.mType = src.type().c_str();
-    dst.mName = src.name().c_str();
-
-    aos::NodeStatus nodeStatus;
-    nodeStatus.FromString(src.status().c_str());
-
-    dst.mStatus   = nodeStatus;
-    dst.mOSType   = src.os_type().c_str();
-    dst.mMaxDMIPS = src.max_dmips();
-    dst.mTotalRAM = src.total_ram();
-
-    if (auto err = ConvertToAos(src.cpus(), dst.mCPUs); !err.IsNone()) {
-        LOG_DBG() << "Failed to convert cpus from proto to aos: " << err.Message();
-
-        return err;
-    }
-
-    if (auto err = ConvertToAos(src.partitions(), dst.mPartitions); !err.IsNone()) {
-        LOG_DBG() << "Failed to convert partitions from proto to aos: " << err.Message();
-
-        return err;
-    }
-
-    if (auto err = ConvertToAos(src.attrs(), dst.mAttrs); !err.IsNone()) {
-        LOG_DBG() << "Failed to convert attrs from proto to aos: " << err.Message();
-
-        return err;
-    }
-
-    return aos::ErrorEnum::eNone;
-}
+#include "utils/convert.hpp"
 
 /***********************************************************************************************************************
  * NodeStreamHandler
@@ -399,7 +298,7 @@ aos::Error NodeStreamHandler::HandleNodeInfo(const iamproto::NodeInfo& info)
 {
     aos::NodeInfo nodeInfo;
 
-    if (auto err = ConvertToAos(info, nodeInfo); !err.IsNone()) {
+    if (auto err = utils::ConvertToAos(info, nodeInfo); !err.IsNone()) {
         LOG_ERR() << "Failed to convert node info from proto to aos: " << err.Message();
 
         return AOS_ERROR_WRAP(err);

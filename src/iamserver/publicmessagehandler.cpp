@@ -15,81 +15,7 @@
 
 #include "log.hpp"
 #include "publicmessagehandler.hpp"
-
-/***********************************************************************************************************************
- * Statics
- **********************************************************************************************************************/
-
-static const aos::Array<uint8_t> ConvertByteArrayToAos(const std::string& arr)
-{
-    return {reinterpret_cast<const uint8_t*>(arr.c_str()), arr.length()};
-}
-
-template <size_t Size>
-static void ConvertToProto(
-    const aos::Array<aos::StaticString<Size>>& src, google::protobuf::RepeatedPtrField<std::string>& dst)
-{
-    for (const auto& val : src) {
-        dst.Add(val.CStr());
-    }
-}
-
-static void ConvertToProto(const aos::Array<aos::StaticString<aos::cSubjectIDLen>>& src, iamproto::Subjects& dst)
-{
-    dst.clear_subjects();
-
-    for (const auto& subject : src) {
-        dst.add_subjects(subject.CStr());
-    }
-}
-
-static void ConvertToProto(const aos::NodeAttribute& src, iamproto::NodeAttribute& dst)
-{
-    dst.set_name(src.mName.CStr());
-    dst.set_value(src.mValue.CStr());
-}
-
-static void ConvertToProto(const aos::PartitionInfo& src, iamproto::PartitionInfo& dst)
-{
-    dst.set_name(src.mName.CStr());
-    dst.set_total_size(src.mTotalSize);
-
-    for (const auto& type : src.mTypes) {
-        dst.add_types(type.CStr());
-    }
-}
-
-static void ConvertToProto(const aos::CPUInfo& src, iamproto::CPUInfo& dst)
-{
-    dst.set_model_name(src.mModelName.CStr());
-    dst.set_num_cores(src.mNumCores);
-    dst.set_num_threads(src.mNumThreads);
-    dst.set_arch(src.mArch.CStr());
-    dst.set_arch_family(src.mArchFamily.CStr());
-}
-
-static void ConvertToProto(const aos::NodeInfo& src, iamproto::NodeInfo& dst)
-{
-    dst.set_id(src.mID.CStr());
-    dst.set_type(src.mType.CStr());
-    dst.set_name(src.mName.CStr());
-    dst.set_status(src.mStatus.ToString().CStr());
-    dst.set_os_type(src.mOSType.CStr());
-    dst.set_max_dmips(src.mMaxDMIPS);
-    dst.set_total_ram(src.mTotalRAM);
-
-    for (const auto& attr : src.mAttrs) {
-        ConvertToProto(attr, *dst.add_attrs());
-    }
-
-    for (const auto& partition : src.mPartitions) {
-        ConvertToProto(partition, *dst.add_partitions());
-    }
-
-    for (const auto& cpuInfo : src.mCPUs) {
-        ConvertToProto(cpuInfo, *dst.add_cpus());
-    }
-}
+#include "utils/convert.hpp"
 
 /***********************************************************************************************************************
  * Public
@@ -139,7 +65,7 @@ void PublicMessageHandler::OnNodeInfoChange(const aos::NodeInfo& info)
     LOG_DBG() << "On node info changed: ID = " << info.mID;
 
     iamproto::NodeInfo nodeInfo;
-    ConvertToProto(info, nodeInfo);
+    utils::ConvertToProto(info, nodeInfo);
 
     mNodeChangedController.WriteToSteams(nodeInfo);
 }
@@ -154,7 +80,7 @@ aos::Error PublicMessageHandler::SubjectsChanged(const aos::Array<aos::StaticStr
     LOG_DBG() << "Subjects changed: count = " << messages.Size();
 
     iamproto::Subjects subjects;
-    ConvertToProto(messages, subjects);
+    utils::ConvertToProto(messages, subjects);
 
     mSubjectsChangedController.WriteToSteams(subjects);
 
@@ -235,7 +161,7 @@ grpc::Status PublicMessageHandler::GetNodeInfo([[maybe_unused]] grpc::ServerCont
 {
     LOG_DBG() << "Public message handler. Process get node info";
 
-    ConvertToProto(mNodeInfo, *response);
+    utils::ConvertToProto(mNodeInfo, *response);
 
     return grpc::Status::OK;
 }
@@ -248,7 +174,7 @@ grpc::Status PublicMessageHandler::GetCert([[maybe_unused]] grpc::ServerContext*
 
     response->set_type(request->type());
 
-    auto issuer = ConvertByteArrayToAos(request->issuer());
+    auto issuer = utils::ConvertByteArrayToAos(request->issuer());
 
     aos::StaticArray<uint8_t, aos::crypto::cSerialNumSize> serial;
 
@@ -416,7 +342,7 @@ grpc::Status PublicMessageHandler::GetNodeInfo([[maybe_unused]] grpc::ServerCont
         return grpc::Status(grpc::StatusCode::INTERNAL, "Failed to get node info");
     }
 
-    ConvertToProto(nodeInfo, *response);
+    utils::ConvertToProto(nodeInfo, *response);
 
     return grpc::Status::OK;
 }

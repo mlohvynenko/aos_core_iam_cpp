@@ -15,64 +15,7 @@
 
 #include "log.hpp"
 #include "protectedmessagehandler.hpp"
-
-/***********************************************************************************************************************
- * Statics
- **********************************************************************************************************************/
-
-static aos::RetWithError<std::string> ConvertSerialToProto(
-    const aos::StaticArray<uint8_t, aos::crypto::cSerialNumSize>& src)
-{
-    aos::StaticString<aos::crypto::cSerialNumStrLen> result;
-
-    auto err = result.ByteArrayToHex(src);
-
-    return {result.Get(), err};
-}
-
-template <size_t Size>
-static void ConvertToProto(
-    const aos::Array<aos::StaticString<Size>>& src, google::protobuf::RepeatedPtrField<std::string>& dst)
-{
-    for (const auto& val : src) {
-        dst.Add(val.CStr());
-    }
-}
-
-static common::v1::ErrorInfo ConvertAosErrorToProto(aos::Error error)
-{
-    common::v1::ErrorInfo result;
-
-    result.set_aos_code(static_cast<int32_t>(error.Value()));
-    result.set_exit_code(error.Errno());
-
-    if (!error.IsNone()) {
-        aos::StaticString<aos::cErrorMessageLen> message;
-
-        auto err = message.Convert(error);
-
-        result.set_message(err.IsNone() ? message.CStr() : error.Message());
-    }
-
-    return result;
-}
-
-template <typename Message>
-static void SetErrorInfo(Message& message, const aos::Error& error)
-{
-    *message.mutable_error() = ConvertAosErrorToProto(error);
-}
-
-static aos::InstanceIdent ConvertToAOS(const iamproto::InstanceIdent& val)
-{
-    aos::InstanceIdent result;
-
-    result.mServiceID = val.service_id().c_str();
-    result.mSubjectID = val.subject_id().c_str();
-    result.mInstance  = val.instance();
-
-    return result;
-}
+#include "utils/convert.hpp"
 
 /***********************************************************************************************************************
  * Public
@@ -152,7 +95,7 @@ grpc::Status ProtectedMessageHandler::PauseNode([[maybe_unused]] grpc::ServerCon
     }
 
     if (auto err = SetNodeStatus(aos::NodeStatusEnum::ePaused); !err.IsNone()) {
-        SetErrorInfo(*response, err);
+        utils::SetErrorInfo(err, *response);
     }
 
     return grpc::Status::OK;
@@ -174,7 +117,7 @@ grpc::Status ProtectedMessageHandler::ResumeNode([[maybe_unused]] grpc::ServerCo
     }
 
     if (auto err = SetNodeStatus(aos::NodeStatusEnum::eProvisioned); !err.IsNone()) {
-        SetErrorInfo(*response, err);
+        utils::SetErrorInfo(err, *response);
     }
 
     return grpc::Status::OK;
@@ -209,7 +152,7 @@ grpc::Status ProtectedMessageHandler::GetCertTypes([[maybe_unused]] grpc::Server
         return grpc::Status(grpc::StatusCode::INTERNAL, "Get certificate types error");
     }
 
-    ConvertToProto(certTypes, *response->mutable_types());
+    utils::ConvertToProto(certTypes, *response->mutable_types());
 
     return grpc::Status::OK;
 }
@@ -232,7 +175,7 @@ grpc::Status ProtectedMessageHandler::StartProvisioning([[maybe_unused]] grpc::S
     if (auto err = GetProvisionManager()->StartProvisioning(request->password().c_str()); !err.IsNone()) {
         LOG_DBG() << "Provision manager failed: " << AOS_ERROR_WRAP(err);
 
-        SetErrorInfo(*response, err);
+        utils::SetErrorInfo(err, *response);
     }
 
     return grpc::Status::OK;
@@ -255,13 +198,13 @@ grpc::Status ProtectedMessageHandler::FinishProvisioning([[maybe_unused]] grpc::
 
     auto err = GetProvisionManager()->FinishProvisioning(request->password().c_str());
     if (!err.IsNone()) {
-        SetErrorInfo(*response, err);
+        utils::SetErrorInfo(err, *response);
 
         return grpc::Status::OK;
     }
 
     if (err = SetNodeStatus(aos::NodeStatusEnum::eProvisioned); !err.IsNone()) {
-        SetErrorInfo(*response, err);
+        utils::SetErrorInfo(err, *response);
 
         return grpc::Status::OK;
     }
@@ -285,13 +228,13 @@ grpc::Status ProtectedMessageHandler::Deprovision([[maybe_unused]] grpc::ServerC
     }
 
     if (auto err = GetProvisionManager()->Deprovision(request->password().c_str()); !err.IsNone()) {
-        SetErrorInfo(*response, err);
+        utils::SetErrorInfo(err, *response);
 
         return grpc::Status::OK;
     }
 
     if (auto err = SetNodeStatus(aos::NodeStatusEnum::eUnprovisioned); !err.IsNone()) {
-        SetErrorInfo(*response, err);
+        utils::SetErrorInfo(err, *response);
     }
 
     return grpc::Status::OK;
@@ -315,7 +258,7 @@ grpc::Status ProtectedMessageHandler::CreateKey([[maybe_unused]] grpc::ServerCon
         LOG_ERR() << "Subject can't be empty";
 
         aos::Error err = aos::ErrorEnum::eFailed;
-        SetErrorInfo(*response, err);
+        utils::SetErrorInfo(err, *response);
 
         return grpc::Status::OK;
     }
@@ -327,7 +270,7 @@ grpc::Status ProtectedMessageHandler::CreateKey([[maybe_unused]] grpc::ServerCon
         if (!err.IsNone()) {
             LOG_ERR() << "Getting system ID error: " << AOS_ERROR_WRAP(err);
 
-            SetErrorInfo(*response, err);
+            utils::SetErrorInfo(err, *response);
 
             return grpc::Status::OK;
         }
@@ -349,7 +292,7 @@ grpc::Status ProtectedMessageHandler::CreateKey([[maybe_unused]] grpc::ServerCon
     aos::StaticString<aos::crypto::cCSRPEMLen> csr;
 
     if (err = GetProvisionManager()->CreateKey(certType, subject, password, csr); !err.IsNone()) {
-        SetErrorInfo(*response, err);
+        utils::SetErrorInfo(err, *response);
 
         return grpc::Status::OK;
     }
@@ -387,7 +330,7 @@ grpc::Status ProtectedMessageHandler::ApplyCert([[maybe_unused]] grpc::ServerCon
     aos::iam::certhandler::CertInfo certInfo;
 
     if (auto err = GetProvisionManager()->ApplyCert(certType, pemCert, certInfo); !err.IsNone()) {
-        SetErrorInfo(*response, err);
+        utils::SetErrorInfo(err, *response);
 
         return grpc::Status::OK;
     }
@@ -395,11 +338,11 @@ grpc::Status ProtectedMessageHandler::ApplyCert([[maybe_unused]] grpc::ServerCon
     aos::Error  err;
     std::string serial;
 
-    Tie(serial, err) = ConvertSerialToProto(certInfo.mSerial);
+    Tie(serial, err) = utils::ConvertSerialToProto(certInfo.mSerial);
     if (!err.IsNone()) {
         LOG_ERR() << "Serial conversion problem: " << AOS_ERROR_WRAP(err);
 
-        SetErrorInfo(*response, err);
+        utils::SetErrorInfo(err, *response);
 
         return grpc::Status::OK;
     }
@@ -418,7 +361,7 @@ grpc::Status ProtectedMessageHandler::RegisterInstance([[maybe_unused]] grpc::Se
     const iamproto::RegisterInstanceRequest* request, iamproto::RegisterInstanceResponse* response)
 {
     aos::Error err         = aos::ErrorEnum::eNone;
-    const auto aosInstance = ConvertToAOS(request->instance());
+    const auto aosInstance = utils::ConvertToAos(request->instance());
 
     LOG_DBG() << "Process register instance: serviceID=" << aosInstance.mServiceID
               << ", subjectID=" << aosInstance.mSubjectID << ", instance=" << aosInstance.mInstance;
@@ -464,7 +407,7 @@ grpc::Status ProtectedMessageHandler::RegisterInstance([[maybe_unused]] grpc::Se
 grpc::Status ProtectedMessageHandler::UnregisterInstance([[maybe_unused]] grpc::ServerContext* context,
     const iamproto::UnregisterInstanceRequest* request, [[maybe_unused]] google::protobuf::Empty* response)
 {
-    const auto instance = ConvertToAOS(request->instance());
+    const auto instance = utils::ConvertToAos(request->instance());
 
     LOG_DBG() << "Process unregister instance: serviceID=" << instance.mServiceID
               << ", subjectID=" << instance.mSubjectID << ", instance=" << instance.mInstance;

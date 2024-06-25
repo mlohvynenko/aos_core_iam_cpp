@@ -5,13 +5,13 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-set(TARGET iamclient)
+set(TARGET utils)
 
 # ######################################################################################################################
 # Sources
 # ######################################################################################################################
 
-set(SOURCES iamclient.cpp)
+set(SOURCES convert.cpp)
 
 # ######################################################################################################################
 # Target
@@ -23,4 +23,4 @@ add_library(${TARGET} STATIC ${SOURCES})
 # Libraries
 # ######################################################################################################################
 
-target_link_libraries(${TARGET} PUBLIC aoscommon aosiam aosutils aoscoreapi-gen-objects Poco::Util utils)
+target_link_libraries(${TARGET} PUBLIC aoscommon aosiam aosutils aoscoreapi-gen-objects Poco::Util)
